@@ -1,3 +1,5 @@
 .idea/*
 .venv/*
 .migrations/*
+alembic.ini
+requirements.txt
