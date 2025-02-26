@@ -42,5 +42,5 @@ async def clear_product_list(user: User = Depends(adm_user)):
 
 router.include_router(
     fastapi_users.get_register_router(UserRead, UserCreate),
-    prefix="/auth",
+    prefix="/register_new_user"
 )

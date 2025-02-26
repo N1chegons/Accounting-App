@@ -10,6 +10,7 @@ class Settings(BaseSettings):
 
     JWT_KEY: str
     MANAGER_PASS: str
+    RESEND_API_KEY: str
 
     @property
     def DB_URL(self):
