@@ -5,6 +5,7 @@ from sqlalchemy import select, update
 
 from src.auth.config import auth_backend
 from src.auth.manager import get_user_manager
+from src.auth.schemas import UserRead, UserCreate
 from src.db import async_session
 from src.entites.models import User
 from src.product.schemas import ProductV
@@ -24,11 +25,17 @@ fastapi_users = FastAPIUsers[User, int](
 cur_user = fastapi_users.current_user()
 @router.get("/account", summary="Account View")
 def protected_route(user: User = Depends(cur_user)):
+    status_user = ""
+    if user.is_superuser:
+        status_user = "Admin"
+    else:
+        status_user = "User"
     return {"status": 200,
             "Id": user.id,
             "Username": user.username,
             "Surname": user.surname,
             "Email": user.email,
+            "Status": status_user,
             "Your product": [ProductV.model_validate(p) for p in user.products],
             }
 
@@ -37,7 +44,7 @@ async def change_data_for_user(new_username: str, new_surname: str, new_email: E
     async with async_session() as session:
         query = select(User).where(User.id==user.id)
         result = await session.execute(query)
-        res = result.scalars().all()
+        res = result.unique().scalars().all()
         try:
             if res:
                 stmt = (

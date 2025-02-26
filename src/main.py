@@ -3,7 +3,7 @@ from sqladmin import Admin
 
 from src.product.router import router as product_router
 from src.auth.router import router as user_router
-from src.sqlAdmin.routeradm import router as admin_router
+from src.admin.router import router as adm_router
 from src.db import async_engine
 from src.sqlAdmin.connect import ProductTableAdm, UserTableAdm
 
@@ -20,7 +20,7 @@ admin = Admin(app, async_engine)
 # APIRouters connect
 app.include_router(user_router)
 app.include_router(product_router)
-app.include_router(admin_router)
+app.include_router(adm_router)
 
 # SQLAdmin views
 admin.add_view(ProductTableAdm)

@@ -24,10 +24,10 @@ async def get_product_list(user: User = Depends(cur_user)):
         else:
             return {"status": 200, "Products": ans_pr}
 
-@router.get("/get_status_product/", summary="Get a list of products with status(sold/unsold)")
-async def get_product_list(product_id: int, status: Status, user: User = Depends(cur_user)):
+@router.get("/get_status_product/{status}/", summary="Get a list of products with status(sold/unsold)")
+async def get_product_list(status: Status, user: User = Depends(cur_user)):
     async with async_session() as session:
-        query = select(ProductTable).filter_by(id=product_id)
+        query = select(ProductTable).filter_by(status=status)
         result = await session.execute(query)
         ans = result.scalars().all()
         ans_pr = [ProductVU.model_validate(p) for p in ans]
@@ -49,7 +49,7 @@ async def create_product(pr: ProductCreate = Depends(), user: User = Depends(cur
         else:
             return {"status": 422, "message": f"Enter your ID, your ID does not match the one you entered({pr_s.user_id})."}
 
-@router.put("/edit_product_info/", summary="Edit product")
+@router.put("/edit_product_info/{product_id}/", summary="Edit product")
 async def edit_product(product_id: int ,name: str = Query(max_length=40), price: int = Query(ge=1)):
     async with async_session() as session:
         query = select(ProductTable).filter_by(id=product_id)
@@ -78,7 +78,7 @@ async def edit_product(product_id: int ,name: str = Query(max_length=40), price:
                 "Error": "Check the value of the fields, and try again"
             }
 
-@router.put("/sale_product/", summary="Product Sale")
+@router.put("/sale_product/{product_id}/", summary="Product Sale")
 async def product_sale(product_id: int, user: User = Depends(cur_user)):
     async with async_session() as session:
         query = select(ProductTable).filter_by(id=product_id)
@@ -108,7 +108,7 @@ async def product_sale(product_id: int, user: User = Depends(cur_user)):
                 "Error": "There is no such product"
             }
 
-@router.delete("/delete_product/", summary="Delete one Product")
+@router.delete("/delete_product/{product_id}/", summary="Delete one Product")
 async def delete_product(product_id: int, user: User = Depends(cur_user)):
     async with async_session() as session:
         # noinspection PyBroadException
@@ -127,7 +127,7 @@ async def delete_product(product_id: int, user: User = Depends(cur_user)):
                 "message": f"Product with {product_id} was not found"
             }
 
-@router.delete("/clear_product_list", summary="Clear all product DB")
+@router.delete("/clear_product_list/", summary="Clear all product DB")
 async def clear_product_list(user: User = Depends(cur_user)):
     async with async_session() as session:
         count = await session.execute(select(func.count()).select_from(ProductTable))
