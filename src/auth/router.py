@@ -5,7 +5,6 @@ from sqlalchemy import select, update
 
 from src.auth.config import auth_backend
 from src.auth.manager import get_user_manager
-from src.auth.schemas import UserRead, UserCreate
 from src.db import async_session
 from src.entites.models import User
 from src.product.schemas import ProductV
@@ -30,7 +29,6 @@ def protected_route(user: User = Depends(cur_user)):
             "Username": user.username,
             "Surname": user.surname,
             "Email": user.email,
-            "Status": "Admin",
             "Your product": [ProductV.model_validate(p) for p in user.products],
             }
 
@@ -66,8 +64,4 @@ async def change_data_for_user(new_username: str, new_surname: str, new_email: E
 router.include_router(
     fastapi_users.get_auth_router(auth_backend),
     prefix="/auth/jwt",
-)
-router.include_router(
-    fastapi_users.get_register_router(UserRead, UserCreate),
-    prefix="/auth",
 )

@@ -26,7 +26,7 @@ class User(SQLAlchemyBaseUserTable[int], BaseMain):
             "TIMEZONE('utc', now())")
     )
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
-    is_superuser: Mapped[bool] = mapped_column(default=True, nullable=False)
+    is_superuser: Mapped[bool] = mapped_column(default=False, nullable=False)
     is_verified: Mapped[bool] = mapped_column(default=True, nullable=False)
 
     products: Mapped[list["ProductTable"]] = relationship(
