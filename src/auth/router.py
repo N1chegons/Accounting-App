@@ -67,8 +67,14 @@ async def change_data_for_user(new_username: str, new_surname: str, new_email: E
                 "Error": "Check the value of the fields, and try again"
             }
 
+
 #auth
 router.include_router(
     fastapi_users.get_auth_router(auth_backend),
     prefix="/auth/jwt",
+)
+
+router.include_router(
+    fastapi_users.get_reset_password_router(),
+    prefix="/auth",
 )

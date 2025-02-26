@@ -127,20 +127,3 @@ async def delete_product(product_id: int, user: User = Depends(cur_user)):
                 "message": f"Product with {product_id} was not found"
             }
 
-@router.delete("/clear_product_list/", summary="Clear all product DB")
-async def clear_product_list(user: User = Depends(cur_user)):
-    async with async_session() as session:
-        count = await session.execute(select(func.count()).select_from(ProductTable))
-        count_cl = count.scalar()
-        # noinspection PyBroadException
-        try:
-            if count_cl > 0:
-                stmt = delete(ProductTable)
-                await session.execute(stmt)
-                await session.commit()
-                return {"status": 200, "message": "Products list clear", "Deleted all products":f"{user.username} {user.surname}"}
-            else:
-                return {"status": 404, "message": "The list of products is empty"}
-        except:
-            return {"status": 404, "message": "Something went wrong..."}
-
