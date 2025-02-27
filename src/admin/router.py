@@ -26,6 +26,7 @@ async def clear_product_list(user: User = Depends(adm_user)):
     async with async_session() as session:
         count = await session.execute(select(func.count()).select_from(ProductTable))
         count_cl = count.scalar()
+
         # noinspection PyBroadException
         try:
             if count_cl > 0:

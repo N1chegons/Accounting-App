@@ -8,7 +8,7 @@ from src.entites.models import Status
 class ProductCreate(BaseModel):
     name: str = Field(max_length=40)
     price: int = Field(ge=1)
-    user_id: int = Field(ge=1, description="Enter your ID")
+    user_id: int = Field(ge=1)
 
 class ProductV(BaseModel):
     id: int
