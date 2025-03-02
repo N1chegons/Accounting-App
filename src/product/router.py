@@ -1,8 +1,6 @@
 from fastapi import APIRouter
 from fastapi.params import Depends, Query
-from pygments.lexer import default
 from sqlalchemy import select, update
-from sqlalchemy.testing.suite.test_reflection import users
 
 from src.auth.router import cur_user
 from src.db import async_session

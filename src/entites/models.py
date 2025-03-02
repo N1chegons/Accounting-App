@@ -3,6 +3,7 @@ import enum
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
 from pydantic import EmailStr
+from pygments.lexer import default
 from sqlalchemy import text, ForeignKey
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.testing.schema import mapped_column
@@ -28,6 +29,7 @@ class User(SQLAlchemyBaseUserTable[int], BaseMain):
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     is_superuser: Mapped[bool] = mapped_column(default=False, nullable=False)
     is_verified: Mapped[bool] = mapped_column(default=True, nullable=False)
+    is_blocked: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     products: Mapped[list["ProductTable"]] = relationship(
         back_populates="creator",
@@ -42,7 +44,7 @@ class ProductTable(BaseMain):
     name: Mapped[str]
     price: Mapped[int]
     status: Mapped[Status]=mapped_column(default=Status.unsold)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete='RESTRICT'))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete='CASCADE'))
     created_at: Mapped[datetime.datetime] = mapped_column(
         server_default=text(
         "TIMEZONE('utc', now())")
