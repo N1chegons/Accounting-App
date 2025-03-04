@@ -61,7 +61,10 @@ async def get_product_list_with_status(status: Status, user: User = Depends(cur_
             else:
                 return {"status": 200, "Products": ans_pr}
         else:
-            return {"message": "Your account is blocked :("}
+            return {
+                "status": 423,
+                "message": "Your account is blocked :("
+            }
 
 @router.post("/create_product/", summary="Create one product")
 async def create_product(pr: ProductCreate = Depends(), user: User = Depends(cur_user)):

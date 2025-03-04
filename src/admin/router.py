@@ -44,34 +44,56 @@ async def get_user_detail(user_id: int, user: User = Depends(adm_user)):
         else:
             return {"status": 200, "Products": us_details}
 
-@router.post("/block_user/{user_id}/", summary="Block suspicious user")
-async def block_user(user_email: EmailStr, user: User = Depends(adm_user)):
+@router.post("/block_user/{user_email}/{status_blocked}/", summary="Block/Unblock suspicious user", description="")
+async def block_user(user_email: EmailStr, status_blocked: bool,  user: User = Depends(adm_user)):
+    """
+    True - Block a user\n
+    False - Unblock a user
+    """
     async with async_session() as session:
         query = select(User).filter_by(email=user_email, is_superuser=False)
         bl_q = await session.execute(query)
         bl_r = bl_q.unique().scalars().all()
-
         try:
             if bl_r:
                 stmt = (
                     update(User)
-                    .values(is_blocked=True)
+                    .values(is_blocked=status_blocked)
                     .filter_by(email=user_email)
                 )
                 await session.execute(stmt)
                 await session.commit()
 
-                # noinspection PyTypeChecker
-                params: resend.Emails.SendParams = {
-                    "from": "AccountingDA@petproject.website",
-                    "to": user_email,
-                    "subject": "Your account is blocked",
-                    "html": f"<h2>Your account has been blocked by Administrator {user.username} {user.surname}</h2>",
-                }
-                email: resend.Email = resend.Emails.send(params)
+                if status_blocked:
+                    # noinspection PyTypeChecker
+                    params: resend.Emails.SendParams = {
+                        "from": "AccountingDA@petproject.website",
+                        "to": user_email,
+                        "subject": "Your account is blocked",
+                        "html": f"<h2>Your account has been blocked by Administrator {user.username} {user.surname}</h2>",
+                    }
+                    email: resend.Email = resend.Emails.send(params)
+                    print(f"The user with email address {user_email} is blocked")
+                    return {
+                        "status": 200,
+                        "message": f"The user with email address {user_email} is blocked",
+                        }
 
-                print(f"The user with email address {user_email} is blocked")
-                return email
+                else:
+                    # noinspection PyTypeChecker
+                    params: resend.Emails.SendParams = {
+                        "from": "AccountingDA@petproject.website",
+                        "to": user_email,
+                        "subject": "Your account is unblocked",
+                        "html": f"<h2>Your account has been unblocked by Administrator {user.username} {user.surname}</h2>",
+                    }
+                    email: resend.Email = resend.Emails.send(params)
+                    print(f"The user with email address {user_email} is unblocked")
+                    return {
+                        "status": 200,
+                        "message": f"The user with email address {user_email} is unblocked",
+                    }
+
             return {"message": f"User with email address {user_email} not found"}
         except:
             return {
