@@ -1,6 +1,8 @@
 import resend
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func, delete
+from pydantic import EmailStr
+from sqlalchemy import select, func, delete, update
+
 
 from src.admin.schemas import UserViewForAdmin, UserViewForAdminDetail
 from src.auth.router import fastapi_users
@@ -43,19 +45,38 @@ async def get_user_detail(user_id: int, user: User = Depends(adm_user)):
             return {"status": 200, "Products": us_details}
 
 @router.post("/block_user/{user_id}/", summary="Block suspicious user")
-async def block_user(user_id: int, user: User = Depends(adm_user)):
+async def block_user(user_email: EmailStr, user: User = Depends(adm_user)):
     async with async_session() as session:
-        # noinspection PyTypeChecker
-        params: resend.Emails.SendParams = {
-            "from": "AccountingDA@petproject.website",
-            "to": user.email,
-            "subject": "Hello World",
-            "html": f"<h1>Token for resent password:</h1>",
-        }
-        email: resend.Email = resend.Emails.send(params)
+        query = select(User).filter_by(email=user_email, is_superuser=False)
+        bl_q = await session.execute(query)
+        bl_r = bl_q.unique().scalars().all()
 
-        print(f"")
-        return email
+        try:
+            if bl_r:
+                stmt = (
+                    update(User)
+                    .values(is_blocked=True)
+                    .filter_by(email=user_email)
+                )
+                await session.execute(stmt)
+                await session.commit()
+
+                # noinspection PyTypeChecker
+                params: resend.Emails.SendParams = {
+                    "from": "AccountingDA@petproject.website",
+                    "to": user_email,
+                    "subject": "Your account is blocked",
+                    "html": f"<h2>Your account has been blocked by Administrator {user.username} {user.surname}</h2>",
+                }
+                email: resend.Email = resend.Emails.send(params)
+
+                print(f"The user with email address {user_email} is blocked")
+                return email
+            return {"message": f"User with email address {user_email} not found"}
+        except:
+            return {
+                "Error": "Unknown error"
+            }
 
 @router.delete("/clear_product_list/", summary="Clear all product DB")
 async def clear_product_list(user: User = Depends(adm_user)):

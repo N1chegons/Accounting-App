@@ -31,9 +31,10 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         params: resend.Emails.SendParams = {
             "from": "AccountingDA@petproject.website",
             "to": user.email,
-            "subject": "Hello World",
+            "subject": "Password reset code",
             "html": f"<h1>Token for resent password:</h1>"
-                    f"<p>{token}</p>",
+                    f"<p>{token}</p>"
+                    f"<p>Don't tell anyone the code.</p>",
         }
         email: resend.Email = resend.Emails.send(params)
 

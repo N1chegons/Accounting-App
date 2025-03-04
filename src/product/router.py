@@ -15,51 +15,72 @@ router = APIRouter(
 @router.get("/get_all_products/", summary="Get a list of products")
 async def get_product_list(user: User = Depends(cur_user)):
     async with async_session() as session:
-        query = select(ProductTable).order_by(ProductTable.created_at)
-        result = await session.execute(query)
-        ans = result.unique().scalars().all()
-        ans_pr = [ProductVU.model_validate(p) for p in ans]
-        if not ans_pr:
-            return{"message": "There is not a single product"}
+        if not user.is_blocked:
+            query = select(ProductTable).order_by(ProductTable.created_at)
+            result = await session.execute(query)
+            ans = result.unique().scalars().all()
+            ans_pr = [ProductVU.model_validate(p) for p in ans]
+            if not ans_pr:
+                return{"message": "There is not a single product"}
+            else:
+                return {"status": 200, "Products": ans_pr}
         else:
-            return {"status": 200, "Products": ans_pr}
+            return {
+                "status": 423,
+                "message": "Your account is blocked :("
+            }
 
 @router.get("/get_your_products/", summary="Get a list of your products")
 async def get_local_product_list(user: User = Depends(cur_user)):
     async with async_session() as session:
-        query = select(ProductTable).filter_by(user_id=user.id).order_by(ProductTable.price)
-        result = await session.execute(query)
-        ans = result.unique().scalars().all()
-        ans_pr = [ProductVU.model_validate(p) for p in ans]
-        if not ans_pr:
-            return{"message": "There is not a single product"}
+        if not user.is_blocked:
+            query = select(ProductTable).filter_by(user_id=user.id).order_by(ProductTable.price)
+            result = await session.execute(query)
+            ans = result.unique().scalars().all()
+            ans_pr = [ProductVU.model_validate(p) for p in ans]
+            if not ans_pr:
+                return{"message": "There is not a single product"}
+            else:
+                return {"status": 200, "Your products": ans_pr}
         else:
-            return {"status": 200, "Your products": ans_pr}
+            return {
+                "status": 423,
+                "message": "Your account is blocked :("
+            }
 
 @router.get("/get_status_product/{status}/", summary="Get a list of products with status(sold/unsold)")
 async def get_product_list_with_status(status: Status, user: User = Depends(cur_user)):
     async with async_session() as session:
-        query = select(ProductTable).filter_by(status=status)
-        result = await session.execute(query)
-        ans = result.scalars().all()
-        ans_pr = [ProductVU.model_validate(p) for p in ans]
-        if not ans_pr:
-            return{"message": "There is not a single product"}
+        if not user.is_blocked:
+            query = select(ProductTable).filter_by(status=status)
+            result = await session.execute(query)
+            ans = result.scalars().all()
+            ans_pr = [ProductVU.model_validate(p) for p in ans]
+            if not ans_pr:
+                return{"message": "There is not a single product"}
+            else:
+                return {"status": 200, "Products": ans_pr}
         else:
-            return {"status": 200, "Products": ans_pr}
+            return {"message": "Your account is blocked :("}
 
 @router.post("/create_product/", summary="Create one product")
 async def create_product(pr: ProductCreate = Depends(), user: User = Depends(cur_user)):
     async with async_session() as session:
-        pr_d = pr.model_dump()
-        pr_s = ProductTable(**pr_d)
-        if pr_s.user_id == user.id:
-            session.add(pr_s)
-            await session.flush()
-            await session.commit()
-            return {"status": 201, "message": "Product created", "creator": f"{user.username} {user.surname}"}
+        if not user.is_blocked:
+            pr_d = pr.model_dump()
+            pr_s = ProductTable(**pr_d)
+            if pr_s.user_id == user.id:
+                session.add(pr_s)
+                await session.flush()
+                await session.commit()
+                return {"status": 201, "message": "Product created", "creator": f"{user.username} {user.surname}"}
+            else:
+                return {"status": 422, "message": f"Enter your ID, your ID does not match the one you entered({pr_s.user_id})."}
         else:
-            return {"status": 422, "message": f"Enter your ID, your ID does not match the one you entered({pr_s.user_id})."}
+            return {
+                "status": 423,
+                "message": "Your account is blocked :("
+            }
 
 @router.put("/edit_product_info/{product_id}/", summary="Edit product")
 async def edit_product(product_id: int ,name: str = Query(max_length=40), price: int = Query(ge=1), user: User = Depends(cur_user)):
@@ -68,6 +89,11 @@ async def edit_product(product_id: int ,name: str = Query(max_length=40), price:
         res = await session.execute(query)
         pr_s = res.scalars().all()
         # noinspection PyBroadException
+        if user.is_blocked:
+            return {
+                "status": 423,
+                "message": "Your account is blocked :("
+            }
         try:
             if pr_s:
                 stmt = (
@@ -96,6 +122,11 @@ async def product_sale(product_id: int, user: User = Depends(cur_user)):
         query = select(ProductTable).filter_by(id=product_id, user_id=user.id)
         res = await session.execute(query)
         pr_s = res.scalars().all()
+        if user.is_blocked:
+            return {
+                "status": 423,
+                "message": "Your account is blocked :("
+            }
         # noinspection PyBroadException
         try:
             if pr_s:
@@ -123,6 +154,11 @@ async def product_sale(product_id: int, user: User = Depends(cur_user)):
 @router.delete("/delete_product/{product_id}/", summary="Delete one Product")
 async def delete_product(product_id: int, user_id: int, user: User = Depends(cur_user)):
     async with async_session() as session:
+        if user.is_blocked:
+            return {
+                "status": 423,
+                "message": "Your account is blocked :("
+            }
         # noinspection PyBroadException
         try:
             if user_id == user.id:
