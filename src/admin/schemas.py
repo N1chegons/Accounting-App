@@ -14,6 +14,11 @@ class UserViewForAdmin(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class UserViewForAdminBlockList(UserViewForAdmin):
+    is_blocked: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
 class UserViewForAdminDetail(UserViewForAdmin):
     products: list["ProductV"]
 

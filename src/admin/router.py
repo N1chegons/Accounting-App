@@ -4,7 +4,7 @@ from pydantic import EmailStr
 from sqlalchemy import select, func, delete, update
 
 
-from src.admin.schemas import UserViewForAdmin, UserViewForAdminDetail
+from src.admin.schemas import UserViewForAdmin, UserViewForAdminDetail, UserViewForAdminBlockList
 from src.auth.router import fastapi_users
 from src.auth.schemas import UserRead, UserCreate
 from src.config import settings
@@ -23,10 +23,22 @@ adm_user = fastapi_users.current_user(superuser=True)
 @router.get("/get_user_list/", summary="Get all users")
 async def get_user_list(user: User = Depends(adm_user)):
     async with async_session() as session:
-        query = select(User).where(User.is_superuser==False).order_by(User.registered_at)
+        query = select(User).where(User.is_superuser==False).order_by(User.is_blocked, User.registered_at)
         mas_us = await session.execute(query)
         mas = mas_us.unique().scalars().all()
         lmas = [UserViewForAdmin.model_validate(c) for c in mas]
+        if not lmas:
+            return {"status": 404, "message": "Not a single User was found."}
+        else:
+            return {"status": 200, "Products": lmas}
+
+@router.get("/get_blocked_user_list/", summary="Get all block users")
+async def get_blocked_user_list(user: User = Depends(adm_user)):
+    async with async_session() as session:
+        query = select(User).filter_by(is_superuser=False, is_blocked=True).order_by(User.registered_at)
+        mas_us = await session.execute(query)
+        mas = mas_us.unique().scalars().all()
+        lmas = [UserViewForAdminBlockList.model_validate(c) for c in mas]
         if not lmas:
             return {"status": 404, "message": "Not a single User was found."}
         else:
